@@ -5,7 +5,7 @@ AS $$
 DECLARE
     -- Variable to hold the dynamic table name based on the input year
     census_place_pop TEXT := 'census_place_pop_' || input_year;
-    rasterized_census_places TEXT := 'rasterized_census_place_' || input_year;
+    rasterized_census_places TEXT := 'rasterized_census_places_' || input_year;
 BEGIN
     EXECUTE format($f$
         CREATE TABLE %I AS

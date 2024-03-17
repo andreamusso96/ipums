@@ -3,7 +3,7 @@ import rioxarray as riox
 import xarray as xr
 
 
-def load_raster(conn, raster_table: str, raster_column: str = 'rast') -> xr.DataArray:
+def load_raster(con, raster_table: str, raster_column: str = 'rast') -> xr.DataArray:
     """
     Load a specific a PostGIS raster into a rioxarray DataArray
 
@@ -16,7 +16,7 @@ def load_raster(conn, raster_table: str, raster_column: str = 'rast') -> xr.Data
     - A rioxarray DataArray object representing the raster
     """
 
-    cur = conn.cursor()
+    cur = con.cursor()
     cur.execute(f"""select ST_AsGDALRaster(ST_Union({raster_column}), 'GTIFF') from {raster_table}""")
     raster = cur.fetchone()
     in_memory_raster = MemoryFile(bytes(raster[0]))
@@ -26,11 +26,11 @@ def load_raster(conn, raster_table: str, raster_column: str = 'rast') -> xr.Data
     return raster_dataset
 
 
-def dump_raster(conn, data: xr.DataArray, table_name:str):
+def dump_raster(con, data: xr.DataArray, table_name:str):
     """
     Dump a rioxarray DataArray into a PostGIS raster table
 
-    :param conn: psycopg2 connection object to the database
+    :param con: psycopg2 connection object to the database
     :param data: a rioxarray DataArray object representing the raster
     :param table_name: Name of the table to store the raster (it must not exist)
     :return: None
@@ -51,9 +51,9 @@ def dump_raster(conn, data: xr.DataArray, table_name:str):
 
         geotiff_data = memory_file.read()
 
-    with conn.cursor() as cursor:
+    with con.cursor() as cursor:
         cursor.execute(f"CREATE TABLE {table_name} (rast raster);")
         cursor.execute(f"INSERT INTO {table_name} (rast) VALUES (ST_FromGDALRaster(%s))", (geotiff_data,))
         cursor.execute(f"SELECT AddRasterConstraints('{table_name}'::name, 'rast'::name);")
-        conn.commit()
+        con.commit()
 
