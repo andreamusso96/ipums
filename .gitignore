@@ -176,4 +176,7 @@ pyrightconfig.json
 # JetBrain's PyCharm IDE
 .idea/
 
+# Data
+ipums_to_postgis/
+
 # End of https://www.toptal.com/developers/gitignore/api/python
