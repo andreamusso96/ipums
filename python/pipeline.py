@@ -1,6 +1,6 @@
 import numpy as np
 
-from convolution import get_2d_exponential_kernel, convolve2d
+from python.convolution import get_2d_exponential_kernel, convolve2d
 from raster_postgis import load_raster, dump_raster
 from utils import get_logger
 
