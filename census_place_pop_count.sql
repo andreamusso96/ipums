@@ -1,27 +1,27 @@
-DROP FUNCTION get_census_place_pop_count(year INTEGER);
-CREATE OR REPLACE FUNCTION get_census_place_pop_count(year INTEGER)
-RETURNS table(pop_count BIGINT, geom GEOGRAPHY) AS
+DROP FUNCTION IF EXISTS get_census_place_pop_count(geo_table_name TEXT);
+CREATE OR REPLACE FUNCTION get_census_place_pop_count(geo_table_name TEXT)
+RETURNS table(census_place_id BIGINT, pop_count BIGINT, geom GEOGRAPHY) AS
 $$
-DECLARE
-    geoTableName TEXT := 'geo_' || year;
 BEGIN
     RETURN QUERY EXECUTE format($f$
         WITH census_place_counts AS (
-            SELECT cpp_placeid, COUNT(*) AS count
+            SELECT census_place_id, COUNT(*) AS count
             FROM %I
-            GROUP BY cpp_placeid
+            GROUP BY census_place_id
         ),
         unique_geoms AS (
-            SELECT DISTINCT ON (cpp_placeid) cpp_placeid, geom
+            SELECT DISTINCT ON (census_place_id) census_place_id, geom
             FROM %I
-            ORDER BY cpp_placeid
+            ORDER BY census_place_id
         )
         SELECT
+            a.census_place_id AS census_place_id,
             a.count AS pop_count,
             b.geom AS geom
         FROM census_place_counts AS a
-        JOIN unique_geoms AS b ON a.cpp_placeid = b.cpp_placeid
-    $f$, geoTableName, geoTableName);
+        JOIN unique_geoms AS b
+        ON a.census_place_id = b.census_place_id
+    $f$, geo_table_name, geo_table_name);
 END;
 $$
 LANGUAGE plpgsql;
