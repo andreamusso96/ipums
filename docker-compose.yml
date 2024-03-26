@@ -4,10 +4,8 @@ services:
   postgis:
     image: postgis/postgis
     container_name: ipums_postgis_container
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: andrea
-      POSTGRES_DB: ipums
+    env_file:
+      - path: ./config.env
     volumes:
       - postgis_data:/var/lib/postgresql/data
     ports:
