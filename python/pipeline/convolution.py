@@ -1,6 +1,5 @@
 import scipy.ndimage as ndimage
 import numpy as np
-from raster_postgis import load_raster, dump_raster
 
 
 def get_2d_exponential_kernel(size: int, decay_rate: float) -> np.ndarray:
