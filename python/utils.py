@@ -41,7 +41,7 @@ def next_census_year(year: int) -> int:
     if year == 1880:
         return 1900
     else:
-        return 1930 # year + 10
+        return year + 10
 
 
 def previous_census_year(year: int) -> int:
