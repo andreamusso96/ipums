@@ -200,7 +200,7 @@ def _create_clusters_from_raster(convolved_raster_table_name: str, cluster_table
 # Step 3: create_cluster_industry_table
 
 
-def create_cluster_data_tables(con, data_table_name: str, cluster_table_name: str, cluster_industry_table_name: str, industry_table_name: str) -> None:
+def create_cluster_data_tables(data_table_name: str, cluster_table_name: str, cluster_industry_table_name: str, industry_table_name: str) -> None:
     logger.debug(f"Creating cluster industry table {cluster_industry_table_name} from {cluster_table_name}")
 
     logger.debug(f"Creating cluster industry table from {cluster_table_name}")
