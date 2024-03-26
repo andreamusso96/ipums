@@ -7,7 +7,7 @@ DECLARE
 BEGIN
     WITH albers_bbox AS (
         SELECT ST_Envelope(ST_Transform(ST_Union(geom), 5070)) AS bbox
-        FROM usa_geom
+        FROM usa_state_geom
         WHERE state_code != 'AK' and state_code != 'HI'
     ),
     bbox_params AS (

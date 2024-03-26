@@ -16,12 +16,11 @@ def load_raster(con, raster_table: str, raster_column: str = 'rast') -> xr.DataA
     - A rioxarray DataArray object representing the raster
     """
 
-    cur = con.cursor()
-    cur.execute(f"""select ST_AsGDALRaster(ST_Union({raster_column}), 'GTIFF') from {raster_table}""")
-    raster = cur.fetchone()
-    in_memory_raster = MemoryFile(bytes(raster[0]))
-    cur.close()
+    with con.cursor() as cursor:
+        cursor.execute(f"SELECT ST_AsGDALRaster({raster_column}, 'GTIff') FROM {raster_table}")
+        raster = cursor.fetchone()
 
+    in_memory_raster = MemoryFile(bytes(raster[0]))
     raster_dataset = riox.open_rasterio(in_memory_raster)
     return raster_dataset
 

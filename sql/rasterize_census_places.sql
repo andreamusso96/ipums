@@ -15,15 +15,15 @@ BEGIN
         )
         SELECT
             cp_pop_count.pop_count AS pop_count,
-            census_place.geom AS geom
-        FROM census_place_pop_counts AS cp_pop_count
+            cp.geom AS geom
+        FROM census_place_pop_count AS cp_pop_count
         JOIN census_place AS cp
-        ON cp_pop_count.census_place_id = cp.census_place_id),
+        ON cp_pop_count.census_place_id = cp.id),
    census_places_geomval AS (
        SELECT ARRAY_AGG((ST_Transform(geom::geometry, 5070), pop_count::float)::geomval) AS geomvalset
        FROM census_place_pop
    )
-   SELECT ST_SetValues(us_raster.rast, 1, census_places_geomval.geomvalset, FALSE) AS rast
+   SELECT ST_SetValues(usa_raster.rast, 1, census_places_geomval.geomvalset, FALSE) AS rast
    FROM census_places_geomval
    CROSS JOIN usa_raster;
         $f$, data_table, data_table);

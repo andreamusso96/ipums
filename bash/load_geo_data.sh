@@ -11,7 +11,7 @@ psql -h "${POSTGRES_HOST}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -c "\timing
 
 for year in $(seq 1850 10 1940); do
   filename_geo_data="${geo_data_path}/histid_place_crosswalk_${year}.csv"
-  geo_table_name="geo_${year}_tmp"
+  geo_table_name="geo_${year}"
 
   # Load the geographic data into the database
   psql -h "${POSTGRES_HOST}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -c "CREATE TABLE ${geo_table_name} (potential_match VARCHAR(50), match_type VARCHAR(50), lat FLOAT, lon FLOAT, state_fips_geomatch VARCHAR(2), county_fips_geomatch VARCHAR(5), cluster_k5 INTEGER, cpp_placeid INTEGER, histid VARCHAR(36));"
