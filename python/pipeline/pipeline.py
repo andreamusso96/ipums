@@ -296,4 +296,4 @@ def run_pipeline(steps: List[int], year: int, convolution_kernel_size: int, conv
 
 
 if __name__ == '__main__':
-    run_pipeline(steps=[3], year=1930, convolution_kernel_size=11, convolution_kernel_decay_rate=0.2, pixel_threshold=100, dbscan_eps=100, dbscan_min_points=1)
+    run_pipeline(steps=[3], year=1860, convolution_kernel_size=11, convolution_kernel_decay_rate=0.2, pixel_threshold=100, dbscan_eps=100, dbscan_min_points=1)

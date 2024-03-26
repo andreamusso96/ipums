@@ -1,6 +1,8 @@
 import logging
 import psycopg2
-from config import db_config
+import pandas as pd
+
+from python.config import db_config
 
 
 # Create a logger
@@ -22,7 +24,29 @@ def execute_sql(query: str, con=None):
     con.close()
 
 
+def sql_to_pandas(query: str, con=None):
+    con = get_db_connection() if con is None else con
+    df = pd.read_sql(query, con=con)
+    con.close()
+    return df
+
+
 def get_db_connection():
-    print('Connecting to the PostgreSQL database...')
     con = psycopg2.connect(**db_config)
     return con
+
+
+def next_census_year(year: int) -> int:
+    assert 1850 <= year <= 1930, f"Year must be between 1850 and 1940, but got {year}"
+    if year == 1880:
+        return 1900
+    else:
+        return 1930 # year + 10
+
+
+def previous_census_year(year: int) -> int:
+    assert 1860 <= year <= 1940, f"Year must be between 1850 and 1940, but got {year}"
+    if year == 1900:
+        return 1880
+    else:
+        return year - 10
