@@ -1,11 +1,11 @@
 import numpy as np
 from typing import List
+import ipums_api
 
 from python.pipeline.convolution import get_2d_exponential_kernel, convolve2d
 from python.pipeline.raster_postgis import load_raster, dump_raster
-from python.utils import get_logger, execute_sql, get_db_connection
 
-logger = get_logger('pipeline')
+logger = ipums_api.get_logger('pipeline')
 
 
 # Step 0: preprocess_data
@@ -33,7 +33,7 @@ def _configure_db():
     query = (f"CREATE EXTENSION IF NOT EXISTS postgis;"
              f"CREATE EXTENSION IF NOT EXISTS postgis_raster;"
              f"ALTER DATABASE ipums SET postgis.gdal_enabled_drivers = 'ENABLE_ALL';")
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _refactor_census_place_table(census_place_table_name: str) -> None:
@@ -45,7 +45,7 @@ def _refactor_census_place_table(census_place_table_name: str) -> None:
              f"ALTER TABLE {census_place_table_name}_new RENAME TO {census_place_table_name};"
              f"CREATE INDEX ON {census_place_table_name} USING GIST (geom);")
 
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _refactor_usa_state_geom_table(usa_state_geom_table: str) -> None:
@@ -56,12 +56,12 @@ def _refactor_usa_state_geom_table(usa_state_geom_table: str) -> None:
              f"DROP TABLE {usa_state_geom_table};"
              f"ALTER TABLE {usa_state_geom_table}_new RENAME TO {usa_state_geom_table};")
 
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _refactor_industry_table(industry_table_name: str) -> None:
     query = f"ALTER TABLE {industry_table_name} ADD PRIMARY KEY (code);"
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _insert_sql_functions(path_sql_functions: str):
@@ -69,7 +69,7 @@ def _insert_sql_functions(path_sql_functions: str):
     for sql_f in sql_function_files:
         with open(sql_f, 'r') as f:
             query = f.read()
-            execute_sql(query=query)
+            ipums_api.execute_sql(query=query)
         logger.debug(f"Inserted function from {sql_f}")
 
 
@@ -104,13 +104,13 @@ def _transform_histid_geo_table_to_uppercase(geo_table_name: str):
              f"DROP TABLE {geo_table_name};"
              f"ALTER TABLE {geo_table_name}_new RENAME TO {geo_table_name}")
 
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _create_indices_geo_and_dem_tables(geo_table_name: str, dem_table_name: str):
     query = (f"CREATE INDEX ON {geo_table_name} (histid);"
              f"CREATE INDEX ON {dem_table_name} (histid);")
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _remove_duplicate_hist_ids_from_geo_and_dem_tables(geo_table_name: str, dem_table_name: str):
@@ -126,7 +126,7 @@ def _remove_duplicate_histid_from_table(tab_name: str):
              f"DELETE FROM {tab_name} "
              f"USING duplicates "
              f"WHERE {tab_name}.histid = duplicates.histid AND duplicates.rownum > 1;")
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _merge_geo_and_dem_tables_to_create_data_table(geo_table_name: str, dem_table_name: str, data_table_name: str):
@@ -136,7 +136,7 @@ def _merge_geo_and_dem_tables_to_create_data_table(geo_table_name: str, dem_tabl
              f"FROM {dem_table_name} LEFT JOIN {geo_table_name} "
              f"ON {dem_table_name}.histid = {geo_table_name}.histid;")
 
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _add_primary_and_foreign_keys_to_data_table(data_table_name: str, census_place_table_name: str, industry_table_name: str):
@@ -144,14 +144,14 @@ def _add_primary_and_foreign_keys_to_data_table(data_table_name: str, census_pla
              f"ALTER TABLE {data_table_name} ADD FOREIGN KEY (census_place_id) REFERENCES {census_place_table_name}(id);"
              f"ALTER TABLE {data_table_name} ADD FOREIGN KEY (ind1950) REFERENCES {industry_table_name}(code);")
 
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _drop_geo_and_dem_tables(dem_table_name: str, geo_table_name: str):
     query = (f"DROP TABLE {dem_table_name};"
              f"DROP TABLE {geo_table_name};")
 
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 # Step 2: create_clusters
@@ -173,11 +173,11 @@ def _rasterize_census_places(data_table_name: str, rasterized_census_place_table
              f"SELECT * FROM rasterize_census_places('{data_table_name}');"
              f"SELECT AddRasterConstraints('{rasterized_census_place_table_name}'::name, 'rast'::name);")
 
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _convolve_raster(rasterized_census_place_table_name: str, convolved_raster_table_name: str, convolution_kernel_size: int, convolution_kernel_decay_rate: float) -> None:
-    con = get_db_connection()
+    con = ipums_api.get_db_connection()
     raster = load_raster(con=con, raster_table=rasterized_census_place_table_name)
     raster_vals = raster.sel(band=1).values
 
@@ -194,7 +194,7 @@ def _create_clusters_from_raster(convolved_raster_table_name: str, cluster_table
              f"SELECT cid AS cluster_id, geom FROM convolved_raster_to_cluster('{convolved_raster_table_name}', {pixel_threshold}, {dbscan_eps}, {dbscan_min_points});"
              f"CREATE INDEX ON {cluster_table_name} USING GIST (geom);")
 
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 # Step 3: create_cluster_industry_table
@@ -230,7 +230,7 @@ def _create_cluster_industry_table(data_table_name: str, cluster_table_name: str
              f"GROUP BY cluster_id, ind1950 "
              f"ORDER BY cluster_id, ind1950; ")
 
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _create_cluster_cluster_table_with_population(cluster_table_name: str, cluster_industry_table_name: str) -> None:
@@ -247,7 +247,7 @@ def _create_cluster_cluster_table_with_population(cluster_table_name: str, clust
              f"CREATE INDEX ON {cluster_table_name} USING GIST (geom);"
              f"ALTER TABLE {cluster_table_name} ADD PRIMARY KEY (cluster_id);")
 
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def _add_primary_and_foreign_keys_to_cluster_industry_table(cluster_table_name: str, cluster_industry_table_name: str, industry_table_name: str) -> None:
@@ -255,7 +255,7 @@ def _add_primary_and_foreign_keys_to_cluster_industry_table(cluster_table_name: 
              f"ALTER TABLE {cluster_industry_table_name} ADD FOREIGN KEY (cluster_id) REFERENCES {cluster_table_name}(cluster_id);"
              f"ALTER TABLE {cluster_industry_table_name} ADD FOREIGN KEY (ind1950) REFERENCES {industry_table_name}(code);")
 
-    execute_sql(query=query)
+    ipums_api.execute_sql(query=query)
 
 
 def run_pipeline(steps: List[int], year: int, convolution_kernel_size: int, convolution_kernel_decay_rate: float, pixel_threshold: float, dbscan_eps: float, dbscan_min_points: int):
@@ -296,4 +296,6 @@ def run_pipeline(steps: List[int], year: int, convolution_kernel_size: int, conv
 
 
 if __name__ == '__main__':
-    run_pipeline(steps=[3], year=1860, convolution_kernel_size=11, convolution_kernel_decay_rate=0.2, pixel_threshold=100, dbscan_eps=100, dbscan_min_points=1)
+    years = [1850, 1870, 1880, 1900, 1910, 1920, 1940]
+    for y in years:
+        run_pipeline(steps=[1, 2, 3], year=y, convolution_kernel_size=11, convolution_kernel_decay_rate=0.2, pixel_threshold=100, dbscan_eps=100, dbscan_min_points=1)

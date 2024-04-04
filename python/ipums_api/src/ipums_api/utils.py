@@ -1,8 +1,10 @@
 import logging
+
 import psycopg2
 import pandas as pd
 
-from python.config import db_config
+
+from ipums_api.config import db_config
 
 
 # Create a logger
